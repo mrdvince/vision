@@ -54,8 +54,8 @@ print(model)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-for epoch in range(20):
-    with tqdm(train_loader, unit="batch") as tepoch:
+for epoch in range(1):
+    with tqdm(train_loader, unit=" batch") as tepoch:
         for images, labels in tepoch:
             model.train()
             optimizer.zero_grad()
@@ -69,4 +69,23 @@ for epoch in range(20):
             loss.backward()
             optimizer.step()
 
-            tepoch.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
+            tepoch.set_postfix(
+                loss=loss.item(), accuracy=100. * accuracy)
+
+test_loss = 0
+class_correct = list(0. for i in range(10))
+class_total = list(0. for i in range(10))
+with tqdm(test_loader, unit=" batch") as tepoch:
+    for images, labels in test_loader:
+        outputs = model(images)
+        loss = F.cross_entropy(outputs, labels)
+        test_loss += loss.item()*images.size(0)
+        _, pred = torch.max(outputs, 1)
+
+        correct = np.squeeze(pred.eq(labels.data.view_as(pred)))
+        for i in range(images.shape[0]):
+            label = labels.data[1]
+            class_correct[label] += correct[i].item()
+            class_total[label] += 1
+    # TODO: calculate loss
+    tepoch.set_postfix(accuracy=100. * accuracy)
