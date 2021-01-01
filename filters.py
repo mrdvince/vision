@@ -6,10 +6,12 @@ import numpy as np
 # %%
 image = mpimg.imread('images/bridge_trees_example.jpg')
 plt.imshow(image)
+# plt.show()
 # %%
 # convert to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 plt.imshow(gray, cmap='gray')
+# plt.show()
 # %%
 # custom kernel
 sobel_y = np.array([
@@ -22,9 +24,11 @@ sobel_x = sobel_y.T
 # filter image
 filtered_img = cv2.filter2D(gray, -1, sobel_y)
 plt.imshow(filtered_img, cmap='gray')
+plt.show()
 # %%
 filtered_img_x = cv2.filter2D(gray, -1, sobel_x)
 plt.imshow(filtered_img_x, cmap='gray')
+# plt.show()
 # %%
 # odd filter
 plt.imshow(cv2.filter2D(gray, -1, np.array([
@@ -33,3 +37,4 @@ plt.imshow(cv2.filter2D(gray, -1, np.array([
     [1, 2, 1, 2],
     [1, 2, 1, 1]
 ])), cmap='gray')
+# plt.show()
