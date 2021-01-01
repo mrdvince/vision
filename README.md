@@ -1,1 +1,1 @@
-# Computer Vision stuff
+# Computer Vision
