@@ -116,3 +116,36 @@ ReLU activation
 In this model, we've used an activation function that scales the output of the convolutional layer. We've chose a ReLU function to do this, and this function simply turns all negative pixel values in 0's (black). See the equation pictured below for input pixel values, x.
 """
 viz_layer(activated_layer)
+# %%
+# maxpooling layer
+
+
+class PooledNet(nn.Module):
+    def __init__(self, weight):
+        super(PooledNet, self).__init__()
+        # initializes the weights of the convolutional layer to be the weights of the 4 defined filters
+        k_height, k_width = weight.shape[2:]
+        # defines the convolutional layer, assumes there are 4 grayscale filters
+        # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True)
+        self.conv = nn.Conv2d(1, 4, kernel_size=(
+            k_height, k_width), bias=False)
+        self.conv.weight = torch.nn.Parameter(weight)
+        # define a pooling layer
+        self.pool = nn.MaxPool2d(2, 2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        activated_x = F.relu(x)
+        pooled_x = self.pool(activated_x)
+        return x, activated_x, pooled_x
+
+
+weight = torch.from_numpy(filters).unsqueeze(1).type(torch.FloatTensor)
+p_model = PooledNet(weight)
+print(p_model)
+print('Filter 1: \n', filter_1)
+# %%
+x, ac_x, pooled = p_model(gray_img_tensor)
+viz_layer(pooled)
+viz_layer(ac_x)
+viz_layer(x)
