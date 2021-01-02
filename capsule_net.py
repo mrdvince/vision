@@ -1,4 +1,7 @@
 # %%
+'''
+https://github.com/cezannec/capsule_net_pytorch/blob/master/Capsule_Network.ipynb
+'''
 from typing import Any
 from torch import tensor
 import torch.nn.functional as F
@@ -106,5 +109,58 @@ def dynamic_routing(b_ij, u_hat, squash, routing_iteratins=3):
             b_ij = b_ij + a_ij
     return v_j
 
+
+# %%
+device = torch.device('cuda' if torch.cuda.is_available() else ('cpu'))
+
+print(device)
+# %%
+
+
+class DigitCaps(nn.Module):
+    def __init__(
+        self,
+        num_capsules=10,
+        previous_layer_nodes=32*6*6,
+        in_channels=8,
+        out_channels=16
+    ):
+        super(DigitCaps, self).__init__()
+
+        self.num_capsules = num_capsules
+        self.previous_layer_nodes = previous_layer_nodes  # 1152
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.W = nn.Parameter(torch.randn(
+            num_capsules, previous_layer_nodes, in_channels, out_channels
+        ))
+
+    def forward(self, x):
+        '''
+        Defines the feedforward behavior.
+        param u: the input; vectors from the previous PrimaryCaps layer
+        return: a set of normalized, capsule output vectors
+        '''
+        u = x[None, :, :, None, :]
+        # 4d weight matrix
+        W = self.W[:, None, :, :, :]
+        # u_hat = u*w
+        u_hat = torch.matmul(u, W)
+        b_ij = torch.zeros(*u_hat.size())
+        b_ij = b_ij.to(device)
+        v_j = dynamic_routing(b_ij, u_hat, self.squash, routing_iteratins=3)
+
+        return v_j
+
+    def squash(self, x: tensor):
+        '''
+        Squashes an input Tensor so it has a magnitude between 0-1.
+        param input_tensor: a stack of capsule inputs, s_j
+        return: a stack of normalized, capsule output vectors, v_j
+        '''
+        squared_norm = (x**2).sum(dim=-1, keepdim=True)
+        scale = squared_norm/(1+squared_norm)
+        out_tensor = scale * x / torch.sqrt(squared_norm)
+        return out_tensor
 
 # %%
