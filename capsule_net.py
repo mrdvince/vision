@@ -2,6 +2,8 @@
 '''
 https://github.com/cezannec/capsule_net_pytorch/blob/master/Capsule_Network.ipynb
 '''
+from tqdm.auto import tqdm
+import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -64,4 +66,38 @@ class CapsuleLoss(nn.Module):
 
         # weighted, summed loss averaged over a batch_size
         return (margin_loss + 0.0005 * reconstruction_loss) / images.size(0)
+# %%
+
+
+criterion = CapsuleLoss()
+optimizer = optim.Adam(model.parameters())
+# %%
+
+
+def train(model, criterion, optimizer, n_epochs, print_every=300):
+    losses = []
+
+    for epoch in range(n_epochs):
+        train_loss = 0.0
+        model.train()
+        with tqdm(train_loader, unit=" batch") as tepoch:
+            for batch_idx, (images, target) in enumerate(tepoch):
+                target = torch.eye(10).index_select(dim=0, index=target)
+                images, target = images.to(device), target.to(device)
+
+                optimizer.zero_grad()
+                m_outputs, reconstructions, y = model(images)
+                loss = criterion(m_outputs, target, images, reconstructions)
+                loss.backward()
+                optimizer.step()
+                if batch_idx != 0 and batch_idx % print_every == 0:
+                    avg_t_loss = train_loss/print_every
+                    losses.append(avg_t_loss)
+                    tepoch.set_postfix(epoch=epoch+1, loss=avg_t_loss)
+                    train_loss = 0  # reset accumulated loss
+    return losses
+
+# %%
+n_epochs = 2
+losses = train(model, criterion, optimizer, n_epochs=n_epochs, print_every=100)
 # %%
