@@ -7,7 +7,6 @@
  Computer Vision
    </h1>
 
-# Dependencies
 
 ## Configure and Manage Your Environment with Anaconda
 
