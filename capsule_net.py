@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torch.nn.modules import padding
+from torch.nn.modules.activation import ReLU
 from torchvision import datasets, transforms
 import numpy as np
 import torch
@@ -163,4 +164,79 @@ class DigitCaps(nn.Module):
         out_tensor = scale * x / torch.sqrt(squared_norm)
         return out_tensor
 
+
 # %%
+# decoder
+'''
+gets 16 dimensional vectors from the DigiCaps layer
+the decoder is learning a mapping from a capsule ouput vector toa 784-dim 
+vector that can be reshaped to a 28x28 reconstructed image
+'''
+
+
+class Decoder(nn.Module):
+    def __init__(self, input_vector_lenght=16, input_capsules=10, hidden_dim=512):
+        super(Decoder, self).__init__()
+
+        input_dim = input_vector_lenght * input_capsules
+
+        # linear layers + activations
+        self.linear_layers = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim*2),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim*2, 28*28),
+            nn.Sigmoid()  # get output pixel in a range 0-1
+        )
+
+    def forward(self, x):
+        classes = (x ** 2).sum(dim=-1) ** 0.5
+        classes = F.softmax(classes, dim=-1)
+
+        _, max_lenght_indices = classes.max(dim=1)
+
+        # create a sparse a sparse class matrix
+        sparse_matrix = torch.eye(10)
+        sparse_matrix.to(device)
+        y = sparse_matrix.indexselect(dim=0, index=max_lenght_indices.data)
+
+        # create reconstructed pixels
+        x = x * y[:, :, None]
+        # flatten
+        x = x.contiguos().view(x.size(0), -1)
+        # create reconstructed image
+        reconstructions = self.linear_layers(x)
+        return reconstructions, y
+
+# %%
+# put it together
+# 1. ConvLayer
+# 2. PrimaryCaps
+# 3. DigitCaps
+# 4. Decoder
+
+
+class CapsuleNetwork(nn.Module):
+    def __init__(self):
+        super(CapsuleNetwork, self).__init__()
+        self.conv_layer = ConvLayer()
+        self.primary_caps = PrimaryCapsules()
+        self.digit_caps = DigitCaps()
+        self.decoder = Decoder()
+
+    def forward(self, x):
+        primary_caps_output = self.primary_caps(self.conv_layer(x))
+        caps_output = self.digit_caps(
+            primary_caps_output).squeeze().transpose(0, 1)
+        reconstructions, y = self.decoder(caps_output)
+
+        return caps_output, reconstructions, y
+
+
+# %%
+# model instance
+model = CapsuleNetwork().to(device)
+print(model)
+# %%
+# custom loss
