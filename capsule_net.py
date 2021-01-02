@@ -2,6 +2,8 @@
 '''
 https://github.com/cezannec/capsule_net_pytorch/blob/master/Capsule_Network.ipynb
 '''
+import torch.nn.functional as F
+import torch.nn as nn
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 import numpy as np
@@ -35,3 +37,31 @@ model = CapsuleNetwork().to(device)
 print(model)
 # %%
 # custom loss
+
+
+class CapsuleLoss(nn.Module):
+    def __init__(self):
+        super(CapsuleLoss, self).__init__()
+        self.reconstruction_loss = nn.MSELoss(
+            reduction='sum')  # cumulative loss
+
+    def forward(self, x, labels, images, reconstructions):
+        batch_size = x.shape[0]
+
+        # calculate margin loss
+        v_c = torch.sqrt((x**2).sum(dim=2, keepdim=True))
+
+        # correct and incorrrect loss
+        left = F.relu(0.9 - v_c).view(batch_size, -1)
+        right = F.relu(v_c - 0.1).view(batch_size, -1)
+
+        margin_loss = labels * left + 0.5 * (1. - labels) * right
+        margin_loss = margin_loss.sum()
+
+        # calculate the reconstruction
+        images = images.view(reconstructions.size()[0], -1)
+        reconstruction_loss = self.reconstruction_loss(reconstructions, images)
+
+        # weighted, summed loss averaged over a batch_size
+        return (margin_loss + 0.0005 * reconstruction_loss) / images.size(0)
+# %%
