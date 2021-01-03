@@ -47,14 +47,15 @@ class PrimaryCapsules(nn.Module):
 # Digit capsules
 
 
-def softmax(input_tensor: Any, dim=1) -> tensor:
+def softmax(input_tensor, dim=1):
     # transpose input
-    transposed_input = input_tensor.transpose(dim, len(input_tensor.size())-1)
+    transposed_input = input_tensor.transpose(
+        dim, len(input_tensor.size()) - 1)
+    # calculate softmax
     softmaxed_output = F.softmax(
-        transposed_input.contiguos().view(-1, transposed_input.size(-1)), dim=-1)
-    # untranspose
-    return softmaxed_output.view(
-        *transposed_input.size()).transpose(dim, len(input_tensor.size())-1)
+        transposed_input.contiguous().view(-1, transposed_input.size(-1)), dim=-1)
+    # un-transpose result
+    return softmaxed_output.view(*transposed_input.size()).transpose(dim, len(input_tensor.size()) - 1)
 
 
 def dynamic_routing(b_ij, u_hat, squash, routing_iteratins=3):
@@ -165,13 +166,13 @@ class Decoder(nn.Module):
 
         # create a sparse a sparse class matrix
         sparse_matrix = torch.eye(10)
-        sparse_matrix.to(device)
-        y = sparse_matrix.indexselect(dim=0, index=max_lenght_indices.data)
+        sparse_matrix = sparse_matrix.to(device)
+        y = sparse_matrix.index_select(dim=0, index=max_lenght_indices.data)
 
         # create reconstructed pixels
         x = x * y[:, :, None]
         # flatten
-        x = x.contiguos().view(x.size(0), -1)
+        x = x.contiguous().view(x.size(0), -1)
         # create reconstructed image
         reconstructions = self.linear_layers(x)
         return reconstructions, y

@@ -35,7 +35,8 @@ for idx in range(images.shape[0]):
     ax.set_title(str(labels[idx].item()))
 # %%
 # model instance
-model = CapsuleNetwork().to(device)
+model = CapsuleNetwork()
+model = model.to(device)
 print(model)
 # %%
 # custom loss
@@ -96,6 +97,7 @@ def train(model, criterion, optimizer, n_epochs, print_every=300):
                     tepoch.set_postfix(epoch=epoch+1, loss=avg_t_loss)
                     train_loss = 0  # reset accumulated loss
     return losses
+
 
 # %%
 n_epochs = 2
