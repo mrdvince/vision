@@ -77,9 +77,10 @@ optimizer = optim.Adam(model.parameters())
 
 def train(model, criterion, optimizer, n_epochs, print_every=300):
     losses = []
-
+    valid_loss_min = np.Inf
     for epoch in range(n_epochs):
         train_loss = 0.0
+
         model.train()
         with tqdm(train_loader, unit=" batch") as tepoch:
             for batch_idx, (images, target) in enumerate(tepoch):
@@ -96,7 +97,8 @@ def train(model, criterion, optimizer, n_epochs, print_every=300):
                     losses.append(avg_t_loss)
                     tepoch.set_postfix(epoch=epoch+1, loss=avg_t_loss)
                     train_loss = 0  # reset accumulated loss
-    return losses
+                 # save model if validation loss has decreased
+                    torch.save(model.state_dict(), 'model_cifar.pt')
 
 
 # %%
