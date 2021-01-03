@@ -92,13 +92,14 @@ def train(model, criterion, optimizer, n_epochs, print_every=300):
                 loss = criterion(m_outputs, target, images, reconstructions)
                 loss.backward()
                 optimizer.step()
+                train_loss += loss.item()
                 if batch_idx != 0 and batch_idx % print_every == 0:
                     avg_t_loss = train_loss/print_every
                     losses.append(avg_t_loss)
                     tepoch.set_postfix(epoch=epoch+1, loss=avg_t_loss)
                     train_loss = 0  # reset accumulated loss
                  # save model if validation loss has decreased
-                    torch.save(model.state_dict(), 'model_cifar.pt')
+                    torch.save(model.state_dict(), 'capsule_mnist.pt')
 
 
 # %%
